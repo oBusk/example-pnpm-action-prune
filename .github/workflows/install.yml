@@ -3,14 +3,14 @@ on:
   - workflow_dispatch
 
 jobs:
-  cache-after-setup:
+  install-as-separate-step:
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
         with:
-          standalone: false
+          run_install: false
       - name: Add prunable dependency to pnpm store
         run: pnpm store add jquery
       - name: Resolve pnpm store path
@@ -29,3 +29,19 @@ jobs:
             pnpm-store-${{ runner.os }}-
       - name: Install dependencies
         run: pnpm install
+  using-run-install:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - name: Cache pnpm store
+        uses: actions/cache@v4
+        with:
+          path: "~/setup-pnpm/node_modules/.bin/store/v10"
+          # Include install options in the cache key so different install configs don't share stores
+          key: pnpm-store-${{ runner.os }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            pnpm-store-${{ runner.os }}-
+      - uses: pnpm/action-setup@v4
+        with:
+          run_install: true
